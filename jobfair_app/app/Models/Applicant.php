@@ -16,18 +16,22 @@ class Applicant extends Model
      */
     protected $fillable = [
         'uuid',
+        'applicant_id',
         'full_name',
         'email',
         'phone_number',
         'address',
+        'school_name',
         'major',
         'graduation_year',
-        'student_id_number',
+        'last_education',
         'skills',
         'portfolio_link',
+        'portfolio_file_path',
         'personal_summary',
-        'photo_path',
-        'cv_path',
+        'photo_path', 
+        'cv_path',    
+        'zip_path',
         'company_id',
     ];
 

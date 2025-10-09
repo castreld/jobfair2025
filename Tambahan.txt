@@ -1,0 +1,4 @@
+Nama, Kotab/Kab (Domisili) (Kab Bandung Raya + Cimahi + field Lainnya), Pendidikan terakhir (SMA Sederajat s/d S1 sederajat), Nama sekolah/PT, jurusan/prodi, email, nomor HP
+
+*Hasil upload file dan foto dikumpulkan dalam 1 folder yang nantinya kaan jadi .zip, contoh di dalam file storage/app/public/Nama_Pendaftar_Data.zip lalu juga ada .zip lainnya milik pendaftar lain
+*Terakhir terimakasihnya dibesarin dan di bawah QR ada ID pendaftarnnya yang dimulai dari JF dilanjut angka acak dengan jumlah 6 angka, contoh JF-926593
