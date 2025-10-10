@@ -145,6 +145,12 @@
                     @endforeach
                 </select>
             </div>
+            <div class="mb-3">
+                <label for="position_id" class="form-label">Posisi yang Dilamar</label>
+                <select class="form-select" id="position_id" name="position_id" required disabled>
+                    <option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>
+                </select>
+            </div>
             <div class="d-grid">
                 <button type="submit" class="btn btn-primary btn-lg">Kirim Lamaran & Dapatkan QR Code</button>
             </div>
@@ -190,6 +196,35 @@
         portfolioTypeRadios.forEach(radio => radio.addEventListener('change', togglePortfolioInputs));
 
         togglePortfolioInputs();
+        const companySelect = document.getElementById('company_id');
+        const positionSelect = document.getElementById('position_id');
+
+        companySelect.addEventListener('change', function() {
+            const companyId = this.value;
+            positionSelect.innerHTML = '<option value="">-- Memuat Posisi --</option>';
+            positionSelect.disabled = true;
+
+            if (companyId) {
+                fetch(`/positions/${companyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        positionSelect.innerHTML = '<option value="">-- Pilih Posisi --</option>';
+                        data.forEach(position => {
+                            const option = document.createElement('option');
+                            option.value = position.id;
+                            option.textContent = position.name;
+                            positionSelect.appendChild(option);
+                        });
+                        positionSelect.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching positions:', error);
+                        positionSelect.innerHTML = '<option value="">-- Gagal Memuat --</option>';
+                    });
+            } else {
+                positionSelect.innerHTML = '<option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>';
+            }
+        });
     });
 </script>
 @endpush

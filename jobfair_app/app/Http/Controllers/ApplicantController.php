@@ -37,6 +37,7 @@ class ApplicantController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:10000',
             'cv' => 'required|file|mimes:pdf|max:10000',
             'company_id' => 'required|exists:companies,id',
+            'position_id' => 'required|exists:positions,id',
             'portfolio_type' => 'required|in:link,file',
             'portfolio_link' => 'required_if:portfolio_type,link|nullable|url',
             'portfolio_file' => 'required_if:portfolio_type,file|nullable|file|mimes:pdf|max:10000',
@@ -60,7 +61,7 @@ class ApplicantController extends Controller
         $zip = new ZipArchive;
         $applicantNameSlug = Str::slug($validatedData['full_name']);
         $zipFileName = 'compressed/' . $applicantNameSlug . '_' . time() . '.zip';
-     
+    
         File::ensureDirectoryExists(storage_path('app/public/compressed'));
         
         if ($zip->open(storage_path('app/public/' . $zipFileName), ZipArchive::CREATE) === TRUE) {
@@ -87,7 +88,7 @@ class ApplicantController extends Controller
         $applicant = Applicant::create($applicantData);
 
         return redirect()->route('qr.show', ['uuid' => $applicant->uuid])
-                        ->with('success', 'Pendaftaran Berhasil!');
+                         ->with('success', 'Pendaftaran Berhasil!');
     }
     
     public function showQr($uuid)
@@ -104,23 +105,28 @@ class ApplicantController extends Controller
     }
 
     public function lookup(Request $request)
-        {
-            $request->validate([
-                'identifier' => 'required|string',
-            ]);
+    {
+        $request->validate([
+            'identifier' => 'required|string',
+        ]);
 
-            $identifier = $request->input('identifier');
+        $identifier = $request->input('identifier');
 
-            $applicant = Applicant::where('applicant_id', $identifier)
-                                ->orWhere('email', $identifier)
-                                ->first();
+        $applicant = Applicant::where('applicant_id', $identifier)
+                               ->orWhere('email', $identifier)
+                               ->first();
 
-            if ($applicant) {
-                return redirect()->route('qr.show', ['uuid' => $applicant->uuid]);
-            }
-
-            return redirect()->route('applicant.create')
-                            ->with('error', 'Data Tidak Ditemukan')
-                            ->with('error_subtitle', 'Mungkin anda belum mendaftar? Silahkan daftar terlebih dahulu!');
+        if ($applicant) {
+            return redirect()->route('qr.show', ['uuid' => $applicant->uuid]);
         }
+
+        return redirect()->route('applicant.create')
+                         ->with('error', 'Data Tidak Ditemukan')
+                         ->with('error_subtitle', 'Mungkin anda belum mendaftar? Silahkan daftar terlebih dahulu!');
+    }
+
+    public function fetchPositions(Company $company)
+    {
+        return response()->json($company->positions);
+    }
 }

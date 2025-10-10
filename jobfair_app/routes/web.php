@@ -8,3 +8,4 @@ Route::post('/apply', [ApplicantController::class, 'store'])->name('applicant.st
 Route::get('/qr/{uuid}', [ApplicantController::class, 'showQr'])->name('qr.show');
 Route::get('/applicant/{uuid}', [ApplicantController::class, 'show'])->name('applicant.show');
 Route::post('/lookup', [ApplicantController::class, 'lookup'])->name('applicant.lookup');
+Route::get('/positions/{company}', [ApplicantController::class, 'fetchPositions'])->name('positions.fetch');

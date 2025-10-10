@@ -33,6 +33,7 @@ class Applicant extends Model
         'cv_path',    
         'zip_path',
         'company_id',
+        'position_id',
     ];
 
     public function company()

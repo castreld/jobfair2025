@@ -2,16 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Company;
+use Illuminate\Database\Seeder;
 
 class CompanySeeder extends Seeder
 {
     public function run(): void
     {
         Company::create(['name' => 'PT. Teknologi Maju']);
-        Company::create(['name' => 'CV. Digital Kreatif']);
-        Company::create(['name' => 'Startup Anak Bangsa']);
-        Company::create(['name' => 'Google Indonesia']);
+        Company::create(['name' => 'CV. Desain Kreatif']);
+        Company::create(['name' => 'Startup Digital Nusantara']);
     }
 }

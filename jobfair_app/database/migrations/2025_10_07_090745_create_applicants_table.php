@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('zip_path'); 
 
             $table->foreignId('company_id')->constrained()->onDelete('cascade');
-            
+            $table->foreignId('position_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
