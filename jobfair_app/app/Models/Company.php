@@ -8,12 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Company extends Model
 {
     use HasFactory;
-    protected $guarded = [];
 
-    public function applicants()
-    {
-        return $this->hasMany(Applicant::class);
-    }
+    protected $fillable = ['name'];
 
     public function positions()
     {

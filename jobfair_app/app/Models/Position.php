@@ -8,7 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Position extends Model
 {
     use HasFactory;
-    protected $guarded = [];
+
+    protected $fillable = ['company_id', 'name'];
 
     public function company()
     {
