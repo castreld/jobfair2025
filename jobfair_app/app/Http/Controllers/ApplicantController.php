@@ -6,6 +6,7 @@ use App\Models\Applicant;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use App\Models\Major;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
@@ -16,7 +17,11 @@ class ApplicantController extends Controller
     public function create()
     {
         $companies = Company::orderBy('name')->get();
-        return view('form', ['companies' => $companies]);
+        $majors = Major::orderBy('name')->get();
+        return view('form', [
+            'companies' => $companies,
+            'majors' => $majors
+        ]);
     }
 
     
@@ -62,13 +67,13 @@ class ApplicantController extends Controller
         $applicantNameSlug = Str::slug($validatedData['full_name']);
         $zipFileName = 'compressed/' . $applicantNameSlug . '_' . time() . '.zip';
     
-        File::ensureDirectoryExists(storage_path('app/public/compressed'));
-        
-        if ($zip->open(storage_path('app/public/' . $zipFileName), ZipArchive::CREATE) === TRUE) {
-            $zip->addFile(storage_path('app/public/' . $photoPath), 'photo_' . basename($photoPath));
-            $zip->addFile(storage_path('app/public/' . $cvPath), 'cv_' . basename($cvPath));
+        Storage::disk('public')->makeDirectory('compressed');
+
+        if ($zip->open(Storage::disk('public')->path($zipFileName), ZipArchive::CREATE) === TRUE) {
+            $zip->addFile(Storage::disk('public')->path($photoPath), 'photo_' . basename($photoPath));
+            $zip->addFile(Storage::disk('public')->path($cvPath), 'cv_' . basename($cvPath));
             if (isset($applicantData['portfolio_file_path'])) {
-                $zip->addFile(storage_path('app/public/' . $applicantData['portfolio_file_path']), 'portfolio_' . basename($applicantData['portfolio_file_path']));
+                $zip->addFile(Storage::disk('public')->path($applicantData['portfolio_file_path']), 'portfolio_' . basename($applicantData['portfolio_file_path']));
             }
             $zip->close();
         }
@@ -90,7 +95,7 @@ class ApplicantController extends Controller
         return redirect()->route('qr.show', ['uuid' => $applicant->uuid])
                          ->with('success', 'Pendaftaran Berhasil!');
     }
-    
+
     public function showQr($uuid)
     {
         $applicant = Applicant::where('uuid', $uuid)->firstOrFail();
@@ -127,6 +132,7 @@ class ApplicantController extends Controller
 
     public function fetchPositions(Company $company)
     {
-        return response()->json($company->positions);
+        $positions = $company->positions()->with('majors')->get();
+        return response()->json($positions);
     }
 }

@@ -2,6 +2,9 @@
 
 @section('content')
 
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
 <div class="card shadow-sm mb-4">
     <div class="card-body">
         <form action="{{ route('applicant.lookup') }}" method="POST">
@@ -66,14 +69,14 @@
 
             <div class="row">
                 <div class="col-md-6 mb-3">
-                <label for="last_education" class="form-label">Pendidikan Terakhir</label>
-                <select class="form-select" id="last_education" name="last_education" required>
-                    <option value="">-- Pilih Pendidikan --</option>
-                    <option value="SMA/SMK Sederajat" {{ old('last_education') == 'SMA/SMK Sederajat' ? 'selected' : '' }}>SMA/SMK Sederajat</option>
-                    <option value="D3" {{ old('last_education') == 'D3' ? 'selected' : '' }}>D3</option>
-                    <option value="D4" {{ old('last_education') == 'D4' ? 'selected' : '' }}>D4</option>
-                    <option value="S1" {{ old('last_education') == 'S1' ? 'selected' : '' }}>S1</option>
-                </select>
+                    <label for="last_education" class="form-label">Pendidikan Terakhir</label>
+                    <select class="form-select" id="last_education" name="last_education" required>
+                        <option value="">-- Pilih Pendidikan --</option>
+                        <option value="SMA/SMK Sederajat" {{ old('last_education') == 'SMA/SMK Sederajat' ? 'selected' : '' }}>SMA/SMK Sederajat</option>
+                        <option value="D3" {{ old('last_education') == 'D3' ? 'selected' : '' }}>D3</option>
+                        <option value="D4" {{ old('last_education') == 'D4' ? 'selected' : '' }}>D4</option>
+                        <option value="S1" {{ old('last_education') == 'S1' ? 'selected' : '' }}>S1</option>
+                    </select>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="school_name" class="form-label">Nama Sekolah/Universitas</label>
@@ -83,8 +86,15 @@
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="major" class="form-label">Jurusan</label>
-                    <input type="text" class="form-control" id="major" name="major" value="{{ old('major') }}" required>
-                </div>
+                    <select class="form-select" id="major" name="major" required>
+                        <option value="">-- Pilih Jurusan --</option>
+                        @foreach($majors as $major)
+                            <option value="{{ $major->name }}" {{ old('major') == $major->name ? 'selected' : '' }}>
+                                {{ $major->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    </div>
                 <div class="col-md-6 mb-3">
                     <label for="graduation_year" class="form-label">Tahun Lulus</label>
                     <input type="number" class="form-control" id="graduation_year" name="graduation_year" value="{{ old('graduation_year') }}" placeholder="Contoh: 2025" required>
@@ -151,8 +161,14 @@
                     <option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>
                 </select>
             </div>
+
+            <div class="alert alert-info" id="position-requirements" style="display: none;"></div>
+            <div class="alert alert-danger" id="qualification-warning" style="display: none;">
+                <strong>Perhatian!</strong> Anda tidak memenuhi kriteria untuk posisi ini. Mohon periksa kembali Pendidikan dan Jurusan Anda.
+            </div>
+
             <div class="d-grid">
-                <button type="submit" class="btn btn-primary btn-lg">Kirim Lamaran & Dapatkan QR Code</button>
+                <button type="submit" id="submit-button" class="btn btn-primary btn-lg">Kirim Lamaran & Dapatkan QR Code</button>
             </div>
         </form>
     </div>
@@ -160,71 +176,163 @@
 @endsection
 
 @push('scripts')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const addressSelect = document.getElementById('address');
-        const addressOtherWrapper = document.getElementById('address_other_wrapper');
-        const addressOtherInput = document.getElementById('address_other');
+document.addEventListener('DOMContentLoaded', function () {
 
-        function toggleAddressOther() {
-            if (addressSelect.value === 'Lainnya') {
-                addressOtherWrapper.style.display = 'block';
-                addressOtherInput.required = true;
-            } else {
-                addressOtherWrapper.style.display = 'none';
-                addressOtherInput.required = false;
-            }
-        }
-        toggleAddressOther();
-        addressSelect.addEventListener('change', toggleAddressOther);
-
-        const portfolioTypeRadios = document.querySelectorAll('input[name="portfolio_type"]');
-        const linkWrapper = document.getElementById('portfolio_link_wrapper');
-        const fileWrapper = document.getElementById('portfolio_file_wrapper');
-
-        function togglePortfolioInputs() {
-            const selectedType = document.querySelector('input[name="portfolio_type"]:checked').value;
-            if (selectedType === 'link') {
-                linkWrapper.style.display = 'block';
-                fileWrapper.style.display = 'none';
-            } else {
-                linkWrapper.style.display = 'none';
-                fileWrapper.style.display = 'block';
-            }
-        }
-
-        portfolioTypeRadios.forEach(radio => radio.addEventListener('change', togglePortfolioInputs));
-
-        togglePortfolioInputs();
-        const companySelect = document.getElementById('company_id');
-        const positionSelect = document.getElementById('position_id');
-
-        companySelect.addEventListener('change', function() {
-            const companyId = this.value;
-            positionSelect.innerHTML = '<option value="">-- Memuat Posisi --</option>';
-            positionSelect.disabled = true;
-
-            if (companyId) {
-                fetch(`/positions/${companyId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        positionSelect.innerHTML = '<option value="">-- Pilih Posisi --</option>';
-                        data.forEach(position => {
-                            const option = document.createElement('option');
-                            option.value = position.id;
-                            option.textContent = position.name;
-                            positionSelect.appendChild(option);
-                        });
-                        positionSelect.disabled = false;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching positions:', error);
-                        positionSelect.innerHTML = '<option value="">-- Gagal Memuat --</option>';
-                    });
-            } else {
-                positionSelect.innerHTML = '<option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>';
-            }
-        });
+    $('#major').select2({
+        theme: 'bootstrap-5'
     });
+
+    const addressSelect = document.getElementById('address');
+    const addressOtherWrapper = document.getElementById('address_other_wrapper');
+    const addressOtherInput = document.getElementById('address_other');
+
+    function toggleAddressOther() {
+        if (addressSelect.value === 'Lainnya') {
+            addressOtherWrapper.style.display = 'block';
+            addressOtherInput.required = true;
+        } else {
+            addressOtherWrapper.style.display = 'none';
+            addressOtherInput.required = false;
+        }
+    }
+    toggleAddressOther();
+    addressSelect.addEventListener('change', toggleAddressOther);
+
+    const portfolioTypeRadios = document.querySelectorAll('input[name="portfolio_type"]');
+    const linkWrapper = document.getElementById('portfolio_link_wrapper');
+    const fileWrapper = document.getElementById('portfolio_file_wrapper');
+
+    function togglePortfolioInputs() {
+        const selectedType = document.querySelector('input[name="portfolio_type"]:checked').value;
+        if (selectedType === 'link') {
+            linkWrapper.style.display = 'block';
+            fileWrapper.style.display = 'none';
+        } else {
+            linkWrapper.style.display = 'none';
+            fileWrapper.style.display = 'block';
+        }
+    }
+
+    portfolioTypeRadios.forEach(radio => radio.addEventListener('change', togglePortfolioInputs));
+    togglePortfolioInputs();
+
+    const companySelect = document.getElementById('company_id');
+    const positionSelect = document.getElementById('position_id');
+    const educationSelect = document.getElementById('last_education');
+    const majorSelect = document.getElementById('major');
+    const requirementsBox = document.getElementById('position-requirements');
+    const warningBox = document.getElementById('qualification-warning');
+    const submitButton = document.getElementById('submit-button');
+
+    let allPositions = [];
+    const educationLevels = {
+        '': 0,
+        'SMA/SMK Sederajat': 1,
+        'D3': 2,
+        'D4': 3,
+        'S1': 3,
+        'D4/S1': 3,
+        'S2': 4
+    };
+
+    companySelect.addEventListener('change', function() {
+        const companyId = this.value;
+        positionSelect.innerHTML = '<option value="">-- Memuat Posisi --</option>';
+        positionSelect.disabled = true;
+        allPositions = [];
+        validateQualifications();
+
+        if (companyId) {
+            fetch(`/positions/${companyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    allPositions = data;
+                    positionSelect.innerHTML = '<option value="">-- Pilih Posisi --</option>';
+                    data.forEach(position => {
+                        const option = document.createElement('option');
+                        option.value = position.id;
+                        option.textContent = position.name;
+                        positionSelect.appendChild(option);
+                    });
+                    positionSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error fetching positions:', error);
+                    positionSelect.innerHTML = '<option value="">-- Gagal Memuat --</option>';
+                });
+        } else {
+            positionSelect.innerHTML = '<option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>';
+        }
+    });
+
+    positionSelect.addEventListener('change', validateQualifications);
+    educationSelect.addEventListener('change', validateQualifications);
+    majorSelect.addEventListener('change', validateQualifications);
+
+    function validateQualifications() {
+        requirementsBox.style.display = 'none';
+        warningBox.style.display = 'none';
+        submitButton.disabled = false;
+        educationSelect.classList.remove('is-invalid');
+        majorSelect.classList.remove('is-invalid');
+
+        const positionId = positionSelect.value;
+        if (!positionId) return;
+
+        const selectedPosition = allPositions.find(p => p.id == positionId);
+        if (!selectedPosition) return;
+
+        const reqEducation = selectedPosition.minimum_education;
+        const reqMajors = selectedPosition.majors || [];
+        
+        let requirementsHtml = '<strong>Kriteria Posisi:</strong><ul>';
+        if (reqEducation) {
+            requirementsHtml += `<li>Pendidikan Minimal: <strong>${reqEducation}</strong></li>`;
+        } else {
+            requirementsHtml += '<li>Pendidikan: <strong>Tidak ada minimal</strong></li>';
+        }
+
+        if (reqMajors.length > 0) {
+            requirementsHtml += `<li>Jurusan: <strong>${reqMajors.map(m => m.name).join(', ')}</strong></li>`;
+        } else {
+            requirementsHtml += '<li>Jurusan: <strong>Semua jurusan</strong></li>';
+        }
+        requirementsHtml += '</ul>';
+        requirementsBox.innerHTML = requirementsHtml;
+        requirementsBox.style.display = 'block';
+
+        const userEducation = educationSelect.value;
+        const userMajor = majorSelect.value.trim().toLowerCase();
+        
+        const requiredLevel = reqEducation ? educationLevels[reqEducation] : 0;
+        const userLevel = userEducation ? educationLevels[userEducation] : 0;
+        const educationMatch = userLevel >= requiredLevel;
+
+        let majorMatch = false;
+        if (reqMajors.length === 0) {
+            majorMatch = true;
+        } else if (userMajor.length > 0) {
+            majorMatch = reqMajors.some(major => 
+                major.name.toLowerCase() === userMajor
+            );
+        }
+
+        if (!educationMatch || !majorMatch) {
+            warningBox.style.display = 'block';
+            submitButton.disabled = true;
+
+            if (!educationMatch) {
+                educationSelect.classList.add('is-invalid');
+            }
+            if (!majorMatch && reqMajors.length > 0) {
+                majorSelect.classList.add('is-invalid');
+            }
+        }
+    }
+});
 </script>
 @endpush
